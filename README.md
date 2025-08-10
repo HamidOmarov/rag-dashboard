@@ -3,7 +3,9 @@
 **Live:** https://huggingface.co/spaces/HamidOmarov/RAG-Dashboard  
 **Back-end API:** https://huggingface.co/spaces/HamidOmarov/FastAPI-RAG-API
 
-[Watch demo (MP4)](assets/demo.mp4)
+[▶ Watch demo (MP4)](assets/demo.mp4)
+
+
 
 Upload a PDF > Ask a question > See answer + top contexts.
 
