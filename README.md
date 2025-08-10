@@ -3,7 +3,7 @@
 **Live:** https://huggingface.co/spaces/HamidOmarov/RAG-Dashboard  
 **Back-end API:** https://huggingface.co/spaces/HamidOmarov/FastAPI-RAG-API
 
-[▶ Watch demo (MP4)](assets/demo.mp4)
+<video src="https://github.com/HamidOmarov/rag-dashboard/blob/main/assets/demo.mp4" controls width="720"></video>
 
 
 
@@ -22,4 +22,7 @@ streamlit run app.py    # v? ya streamlit_app.py (repo v?ziyy?tin? gor?)
 Create `.streamlit/secrets.toml`:
 API_BASE = "https://HamidOmarov-FastAPI-RAG-API.hf.space"
 
+
+
+<video src="https://raw.githubusercontent.com/HamidOmarov/rag-dashboard/main/assets/demo.mp4" controls width="720"></video>
 
