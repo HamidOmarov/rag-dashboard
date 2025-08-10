@@ -1,5 +1,2 @@
 streamlit
 requests
-transformers>=4.40
-sentencepiece
-sacremoses
