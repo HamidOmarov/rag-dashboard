@@ -3,6 +3,8 @@
 **Live:** https://huggingface.co/spaces/HamidOmarov/RAG-Dashboard  
 **Back-end API:** https://huggingface.co/spaces/HamidOmarov/FastAPI-RAG-API
 
+[Watch demo (MP4)](assets/demo.mp4)
+
 Upload a PDF > Ask a question > See answer + top contexts.
 
 ## How it works
@@ -18,4 +20,4 @@ streamlit run app.py    # v? ya streamlit_app.py (repo v?ziyy?tin? gor?)
 Create `.streamlit/secrets.toml`:
 API_BASE = "https://HamidOmarov-FastAPI-RAG-API.hf.space"
 
-[Watch demo (MP4)](assets/Recording 2025-08-10 182048.mp4)
+
