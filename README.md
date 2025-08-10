@@ -17,3 +17,5 @@ streamlit run app.py    # v? ya streamlit_app.py (repo v?ziyy?tin? gor?)
 ## Configure API endpoint
 Create `.streamlit/secrets.toml`:
 API_BASE = "https://HamidOmarov-FastAPI-RAG-API.hf.space"
+
+[Watch demo (MP4)](assets/Recording 2025-08-10 182048.mp4)
