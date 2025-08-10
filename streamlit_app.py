@@ -1,82 +1,49 @@
-import base64, requests, streamlit as st
+# streamlit_app.py
+import requests
+import streamlit as st
 
 st.set_page_config(page_title="RAG Dashboard", page_icon="📄")
 
-DEFAULT_API = st.secrets.get("API_BASE", "https://HamidOmarov-FastAPI-RAG-API.hf.space")
-st.sidebar.header("⚙️ Settings")
-API_BASE = st.sidebar.text_input("API Base URL", value=DEFAULT_API, help="Example: https://HamidOmarov-FastAPI-RAG-API.hf.space")
-if API_BASE.endswith("/"):
-    API_BASE = API_BASE[:-1]
+API_BASE = st.secrets.get("API_BASE", "https://HamidOmarov-FastAPI-RAG-API.hf.space")
 
-if "session_id" not in st.session_state:
-    st.session_state.session_id = None
+st.title("RAG Dashboard")
+st.caption("Upload a PDF, ask a question, and view context hits.")
 
-page = st.sidebar.radio("Pages", ["Home", "PDF Viewer", "Chat", "Analytics"])
+with st.sidebar:
+    st.header("Actions")
+    api_url = st.text_input("API Base URL", API_BASE)
+    if st.button("Health Check"):
+        r = requests.get(f"{api_url}/health", timeout=30)
+        st.write(r.json())
 
-def _req(method, path, **kw):
-    url = f"{API_BASE}{path}"
-    r = requests.request(method, url, timeout=90, **kw)
-    r.raise_for_status()
-    return r.json()
+st.subheader("Upload PDF")
+pdf_file = st.file_uploader("Choose PDF", type=["pdf"])
+if st.button("Upload PDF"):
+    if not pdf_file:
+        st.warning("Please select a PDF first.")
+    else:
+        files = {"file": (pdf_file.name, pdf_file.getvalue(), "application/pdf")}
+        r = requests.post(f"{api_url}/upload_pdf", files=files, timeout=120)
+        st.success(r.json())
 
-def show_pdf_inline(file_bytes: bytes, height: int = 600):
-    b64 = base64.b64encode(file_bytes).decode("utf-8")
-    html = f'<iframe src="data:application/pdf;base64,{b64}" width="100%" height="{height}" type="application/pdf"></iframe>'
-    st.components.v1.html(html, height=height)
+st.subheader("Ask a Question")
+question = st.text_input("Type your question")
+top_k = st.number_input("Top K", min_value=1, max_value=10, value=5, step=1)
+if st.button("Ask"):
+    if not question.strip():
+        st.warning("Please type a question.")
+    else:
+        payload = {"question": question.strip(), "top_k": int(top_k)}
+        r = requests.post(f"{api_url}/ask_question", json=payload, timeout=60)
+        data = r.json()
+        st.markdown("### Answer")
+        st.code(data.get("answer", ""), language="markdown")
+        with st.expander("Contexts"):
+            for i, ctx in enumerate(data.get("contexts", []), 1):
+                st.markdown(f"**Context {i}:**")
+                st.write(ctx)
 
-if page == "Home":
-    st.title("📄 RAG Dashboard")
-    try:
-        st.success(_req("GET", "/health"))
-    except Exception as e:
-        st.error(f"API-ya qoşulmaq olmur: {e}")
-
-elif page == "PDF Viewer":
-    st.title("📄 PDF Upload & Preview")
-    pdf = st.file_uploader("PDF seç", type=["pdf"])
-    if pdf:
-        with st.expander("Preview", expanded=True):
-            show_pdf_inline(pdf.getvalue(), 600)
-        if st.button("API-yə yüklə"):
-            try:
-                files = {"file": (pdf.name, pdf.getvalue(), "application/pdf")}
-                st.success(_req("POST", "/upload_pdf", files=files))
-            except Exception as e:
-                st.error(f"Yükləmə xətası: {e}")
-
-elif page == "Chat":
-    st.title("💬 Chat with RAG")
-    q = st.text_input("Sualını yaz")
-    top_k = st.number_input("Top-K", 1, 10, 5)
-    if st.button("Sor"):
-        if not q.strip():
-            st.warning("Sual boş ola bilməz.")
-        else:
-            try:
-                payload = {"question": q, "session_id": st.session_state.session_id, "top_k": int(top_k)}
-                data = _req("POST", "/ask_question", json=payload)
-                st.session_state.session_id = data.get("session_id", st.session_state.session_id)
-                st.subheader("Cavab")
-                st.write(data.get("answer", ""))
-                with st.expander("Contexts"):
-                    for c in data.get("contexts", []):
-                        st.write(c)
-            except Exception as e:
-                st.error(f"Sual zamanı xəta: {e}")
-
-elif page == "Analytics":
-    st.title("📈 Session Analytics")
-    sid = st.text_input("Session ID", value=st.session_state.get("session_id") or "")
-    if st.button("Tarixçəni gətir"):
-        if not sid:
-            st.warning("Session ID daxil et.")
-        else:
-            try:
-                data = _req("GET", "/get_history", params={"session_id": sid})
-                hist = data.get("history", [])
-                st.write(f"Mesaj sayı: {len(hist)}")
-                for item in hist:
-                    role, content = item.get("role"), item.get("content")
-                    st.markdown(f"**{'👤 User' if role=='user' else '🤖 Assistant'}:** {content}")
-            except Exception as e:
-                st.error(f"Analytics xətası: {e}")
+st.subheader("History")
+if st.button("Show History"):
+    r = requests.get(f"{api_url}/get_history", timeout=30)
+    st.write(r.json())
