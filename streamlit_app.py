@@ -4,7 +4,7 @@ st.set_page_config(page_title="RAG Dashboard", page_icon="📄")
 
 DEFAULT_API = st.secrets.get("API_BASE", "https://HamidOmarov-FastAPI-RAG-API.hf.space")
 st.sidebar.header("⚙️ Settings")
-API_BASE = st.sidebar.text_input("API Base URL", value=DEFAULT_API, help="Məs: https://username-fastapi-rag-api.hf.space")
+API_BASE = st.sidebar.text_input("API Base URL", value=DEFAULT_API, help="Example: https://HamidOmarov-FastAPI-RAG-API.hf.space")
 if API_BASE.endswith("/"):
     API_BASE = API_BASE[:-1]
 
