@@ -1,43 +1,44 @@
 # streamlit_app.py
+# -*- coding: utf-8 -*-
 import os
 import time
 import requests
 import streamlit as st
 
-# ─────────────────────────────────────────────────────────────
-# Page config
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Page config (ASCII-only to avoid encoding issues when pasting from terminals)
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="RAG Dashboard",
     page_icon="📄",
     layout="wide",
 )
 
-# ─────────────────────────────────────────────────────────────
-# API base resolver (ENV → secrets → default)
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# API base resolver: ENV -> secrets -> default
+# -----------------------------------------------------------------------------
 DEFAULT_API = "https://hamidomarov-fastapi-rag-api.hf.space"
 
 def _resolve_api_base() -> str:
-    # 1) Respect environment variable if provided
+    # 1) ENV
     env_val = os.getenv("API_BASE")
     if env_val:
         return env_val.rstrip("/")
-    # 2) Try Streamlit secrets (avoid touching if secrets file doesn't exist)
+    # 2) Streamlit secrets (ignore if missing)
     try:
         val = st.secrets["API_BASE"]
         if isinstance(val, str) and val.strip():
             return val.rstrip("/")
     except Exception:
         pass
-    # 3) Fallback to default
+    # 3) Default
     return DEFAULT_API
 
 API_BASE = _resolve_api_base()
 
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # HTTP helper
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 def fetch_json(path: str, method: str = "GET", *, json_body=None, files=None, timeout=60):
     """Simple fetch with cache-busting for GET and friendly error shape."""
     url = f"{API_BASE}{path}"
@@ -64,23 +65,38 @@ def fetch_json(path: str, method: str = "GET", *, json_body=None, files=None, ti
             text = he.response.text
         except Exception:
             text = str(he)
-        return {"_error": f"HTTP {he.response.status_code}: {text[:500]}", "_url": url}
+        code = getattr(he.response, "status_code", "???")
+        return {"_error": f"HTTP {code}: {text[:500]}", "_url": url}
     except Exception as e:
         return {"_error": str(e), "_url": url}
 
-# ─────────────────────────────────────────────────────────────
-# Sidebar: API base, health, quick stats
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Sidebar: API base, refresh/clear, health, quick stats
+# -----------------------------------------------------------------------------
 with st.sidebar:
     st.caption("API Base")
     st.code(API_BASE, language="text")
 
     c1, c2 = st.columns(2)
     if c1.button("Refresh", use_container_width=True):
-        st.experimental_rerun()
+        # modern Streamlit: use st.rerun()
+        try:
+            st.cache_data.clear()
+        except Exception:
+            pass
+        try:
+            st.cache_resource.clear()
+        except Exception:
+            pass
+        st.rerun()
+
     if c2.button("Clear state", use_container_width=True):
         try:
             st.cache_data.clear()
+        except Exception:
+            pass
+        try:
+            st.cache_resource.clear()
         except Exception:
             pass
         for k in list(st.session_state.keys()):
@@ -94,7 +110,7 @@ with st.sidebar:
         st.error(f"Health error: {health['_error']}")
     else:
         ok = isinstance(health, dict) and health.get("status") == "ok"
-        st.metric("Status", "Healthy ✅" if ok else "Degraded ⚠️")
+        st.metric("Status", "Healthy ✓" if ok else "Degraded ⚠️")
         st.caption(
             f"Version: {health.get('version','n/a')} • "
             f"Summarizer: {health.get('summarizer','n/a')}"
@@ -105,31 +121,36 @@ with st.sidebar:
     stats = fetch_json("/stats")
     total_chunks = 0
     if isinstance(stats, dict) and "_error" not in stats:
-        total_chunks = int(stats.get("total_chunks") or stats.get("faiss_ntotal") or 0)
+        total_chunks = int(
+            stats.get("total_chunks")
+            or stats.get("faiss_ntotal")
+            or 0
+        )
         st.metric("Indexed Chunks", total_chunks)
         st.caption(
             f"FAISS ntotal: {stats.get('faiss_ntotal','n/a')} • "
             f"Model dim: {stats.get('model_dim','n/a')}"
         )
     else:
+        # Fallback via /get_history if /stats unavailable
         hist = fetch_json("/get_history")
         if isinstance(hist, dict) and "_error" not in hist:
             total_chunks = int(hist.get("total_chunks", 0))
         st.metric("Indexed Chunks", total_chunks)
-        if "_error" in stats:
+        if isinstance(stats, dict) and "_error" in stats:
             st.caption("`/stats` unavailable; using `/get_history` fallback.")
 
     st.info("Charts & more: open the **Analytics** page from the sidebar.")
 
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Header
-# ─────────────────────────────────────────────────────────────
-st.title("📄 RAG Dashboard (Streamlit)")
+# -----------------------------------------------------------------------------
+st.title("RAG Dashboard (Streamlit)")
 st.caption("Upload a PDF, ask a question, and review retrieved contexts.")
 
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Main layout
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 left, right = st.columns([1, 1.2], gap="large")
 
 # Left: Upload
@@ -152,7 +173,10 @@ with left:
                 if "_error" in res:
                     st.error(f"Upload failed: {res['_error']}")
                 else:
-                    st.success(f"Indexed {res.get('chunks_added','?')} chunk(s) from {res.get('filename', up.name)}")
+                    st.success(
+                        f"Indexed {res.get('chunks_added','?')} chunk(s) from "
+                        f"{res.get('filename', up.name)}"
+                    )
                     with st.expander("Upload response"):
                         st.json(res)
             except Exception as e:
@@ -195,23 +219,24 @@ with right:
         if isinstance(ctxs, list) and ctxs:
             with st.expander("Top contexts"):
                 preview = [str(x) for x in ctxs[:3]]
-                st.code(("\n\n" + "-" * 24 + "\n\n").join(preview))
+                st.code(("\n\n" + "-" * 24 + "\n\n").join(preview), language="text")
         else:
             st.caption("No contexts returned.")
 
         with st.expander("Debug: Raw response"):
             st.json(ans)
 
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # History (best-effort)
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 st.divider()
 st.subheader("History")
 hist = fetch_json("/get_history")
 if isinstance(hist, dict) and hist.get("history"):
     for row in hist["history"][:5]:
         ts = row.get("timestamp", "")
-        st.info(f"• {row.get('question','(no question)')}  —  {ts}")
+        qtxt = row.get("question", "(no question)")
+        st.info(f"• {qtxt} — {ts}")
 else:
     st.info("• What is the document about? — (just now)")
     st.info("• List key figures mentioned. — (2 min ago)")
