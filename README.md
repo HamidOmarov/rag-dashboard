@@ -1,21 +1,14 @@
-# RAG Dashboard (Streamlit)
-
-**Live UI:** https://huggingface.co/spaces/HamidOmarov/RAG-Dashboard  
-**Back-end API:** https://huggingface.co/spaces/HamidOmarov/FastAPI-RAG-API
-
-Upload a PDF → Ask a question → See answer + top contexts.  
-Stack: Streamlit · FastAPI (FAISS + sentence-transformers)
-
+---
+title: RAG Dashboard
+emoji: 📊
+colorFrom: indigo
+colorTo: blue
+sdk: streamlit
+app_file: streamlit_app.py
+pinned: false
 ---
 
-## Quick demo
+# RAG Dashboard
 
-![Demo](assets/demo.gif)
-
-[▶ Watch full demo (MP4)](https://raw.githubusercontent.com/HamidOmarov/rag-dashboard/main/assets/demo.mp4)
-
----
-
-## Configure API endpoint
-Create `.streamlit/secrets.toml` with your API base:
-
+Minimal Streamlit UI for your RAG API.
+Open the Space and use the sidebar. The "Analytics" page shows stats from the backend.
