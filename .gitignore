@@ -1,7 +1,4 @@
-
-.streamlit/
-rag-dashboard/
-assets/
-demo/
+﻿assets/
 videos/
-triple_check_results.json
+*.mp4
+*.gif
