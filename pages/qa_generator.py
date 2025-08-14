@@ -6,7 +6,7 @@ st.title("🧩 PDF → Q&A Dataset")
 
 GEN_API = st.secrets.get(
     "GENERATOR_BASE",
-    os.getenv("GENERATOR_BASE", "https://hamidomarov-pdf-qa-qa-generator.hf.space").rstrip("/")
+    os.getenv("GENERATOR_BASE", "https://hamidomarov-pdf-qa-generator.hf.space").rstrip("/")
 )
 
 with st.sidebar:
